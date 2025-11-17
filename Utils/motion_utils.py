@@ -43,6 +43,7 @@ def motion_block(prev_frame: np.ndarray, frame: np.ndarray, i: int, j: int, bloc
 # ---------------------------
 def residual_pframe(motion_vectors: List[PointMotion], prev_frame: np.ndarray, frame: np.ndarray,
                     block_size: int) -> np.ndarray:
+
     predict_frame = prev_frame.copy()
     for motion in motion_vectors:
         set_block_ref(predict_frame, motion, block_size)

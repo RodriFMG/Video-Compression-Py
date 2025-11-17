@@ -1,23 +1,8 @@
-import cv2
 import numpy as np
-from typing import List, Tuple
 from Encoding import Encoding
-from Utils.block_utils import PointMotion, set_block_ref
-from IFrame import IFrame
-from BFrame import BFrame
+from Utils.block_utils import set_block_ref
 from Utils.motion_utils import motion_block, residual_pframe
 from typing import Optional
-
-
-def apply_motions(frame: Encoding):
-    if isinstance(frame, BFrame):
-        for motion in frame.MVprev:
-            frame.set_block(frame.prevRef, motion)
-        for motion in frame.MVnext:
-            frame.set_block(frame.nextRef, motion)
-    else:
-        for motion in frame.MV:
-            frame.ref.set_block(motion)
 
 
 class PFrame(Encoding):
@@ -27,22 +12,25 @@ class PFrame(Encoding):
         self.MV: Optional[list] = None
         self.block_size: Optional[int] = None
 
-    def set_block(self, pm: PointMotion):
-        set_block_ref(self.ref.decode(), pm, self.block_size)
-
     def decode(self) -> np.ndarray:
-        # Aplicar motion vectors
 
-        apply_motions(self.ref)
+        # Frame decodificado de referencia, copias para aplicar el motion.
+        pred_ref = self.ref.decode().copy()
 
-        ref_decoded = self.ref.decode()
-        result = cv2.add(ref_decoded, self.res)
-        return result
+        # Aplicando los vectores de movimiento a los frames decodificados
+        for mv in self.MV:
+            set_block_ref(pred_ref, mv, self.block_size)
+
+        # La predicción vendría siendo el frame decodificado aplicando los motion vectors
+        decoded = self.res.astype(np.int16) + pred_ref.astype(np.int16)
+        decoded = np.clip(decoded, 0, 255).astype(np.uint8)
+
+        return decoded
 
     def encode(self, prev_frame: Encoding, frame: np.ndarray, block_size: int) -> "PFrame":
 
         # Decodificación del frame previo
-        prev_dec = prev_frame.decode()
+        prev_dec = prev_frame.decode().copy()
 
         height, width = frame.shape[:2]
         motion_vectors = []
@@ -55,6 +43,7 @@ class PFrame(Encoding):
         # Predicción
         residual = residual_pframe(motion_vectors, prev_dec, frame, block_size)
 
+        # Configuración del frame
         self.ref = prev_frame
         self.res = residual
         self.MV = motion_vectors

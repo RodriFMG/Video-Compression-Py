@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-from typing import List, Tuple
+from typing import Tuple
+
 
 class PointMotion:
     def __init__(self, pos: Tuple[int, int], dx: int, dy: int):
@@ -19,4 +20,3 @@ def set_block_ref(ref: np.ndarray, pm: PointMotion, block_size: int):
 
 def interpolation(prev: np.ndarray, next: np.ndarray, alpha: float = 0.5) -> np.ndarray:
     return cv2.addWeighted(prev, 1.0 - alpha, next, alpha, 0.0)
-

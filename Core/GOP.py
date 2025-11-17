@@ -7,7 +7,7 @@ from IFrame import IFrame
 
 
 class GOP:
-    def __init__(self, size: int):
+    def __init__(self):
         # Acá defino la secuencia de frames que seguirá...
         self.group: List[Encoding] = [IFrame(),
                                       BFrame(), BFrame(), PFrame(),

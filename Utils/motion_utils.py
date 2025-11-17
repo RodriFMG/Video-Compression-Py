@@ -7,7 +7,6 @@ from Core.BFrame import BFrame
 
 from Utils.block_utils import interpolation, PointMotion, set_block_ref
 
-
 # ---------------------------
 # Patrón Diamond Search (simplificado)
 # ---------------------------
@@ -68,41 +67,3 @@ def residual_bframe(mv_prev: List[PointMotion], mv_fut: List[PointMotion],
     predict_frame = interpolation(pred_prev, pred_fut, alpha)
     residual = frame.astype(np.int16) - predict_frame.astype(np.int16)
     return residual
-
-
-# ---------------------------
-# Computar I, P y B frames
-# ---------------------------
-def compute_iframe(frame: np.ndarray, block_size: int) -> IFrame:
-    return IFrame(frame, block_size)
-
-
-def compute_pframe(prev_frame: np.ndarray, frame: np.ndarray, block_size: int) -> PFrame:
-    height, width = prev_frame.shape[:2]
-    motion_vectors = []
-    for i in range(0, height, block_size):
-        for j in range(0, width, block_size):
-            motion_vectors.append(motion_block(prev_frame, frame, i, j, block_size))
-    residual = residual_pframe(motion_vectors, prev_frame, frame, block_size)
-    ref_iframe = IFrame(prev_frame, block_size)
-    return PFrame(ref_iframe, residual, motion_vectors)
-
-
-def compute_bframe(prev_frame: np.ndarray, frame: np.ndarray, fut_frame: np.ndarray, block_size: int,
-                   alpha: float = 0.5) -> BFrame:
-    height, width = prev_frame.shape[:2]
-    mv_prev = []
-    mv_fut = []
-
-    for i in range(0, height, block_size):
-        for j in range(0, width, block_size):
-            mv_prev.append(motion_block(prev_frame, frame, i, j, block_size))
-
-    for i in range(0, height, block_size):
-        for j in range(0, width, block_size):
-            mv_fut.append(motion_block(fut_frame, frame, i, j, block_size))
-
-    residual = residual_bframe(mv_prev, mv_fut, prev_frame, frame, fut_frame, block_size, alpha)
-    prev_ref = IFrame(prev_frame, block_size)
-    next_ref = PFrame(IFrame(fut_frame, block_size), np.zeros_like(residual), mv_fut)
-    return BFrame(prev_ref, next_ref, mv_prev, mv_fut, residual)
